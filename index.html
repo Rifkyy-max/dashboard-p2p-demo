@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard P2P - Dinkes Bantul</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --bg:#f3f6f8; --card:#fff; --ink:#1f2933; --muted:#697586; --line:#e2e8ee;
+  --brand:#0f766e; --brand-d:#0b5a54; --brand-l:#e3f4f2; --warn:#b45309; --bad:#b91c1c; --good:#15803d;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+button,select,input{font:inherit}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.brand h1{margin:0;font-size:17px}
+.brand p{margin:0;color:var(--muted);font-size:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn:hover{background:#f6f8fa}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-d)}
+.btn.primary[disabled]{opacity:.45;cursor:not-allowed}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:4px 9px;font-size:12px}
+.warn{margin:12px 20px;padding:10px 14px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}
+.tabs{display:flex;gap:4px;padding:10px 20px 0;flex-wrap:wrap}
+.tab{padding:8px 16px;border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;background:#e9eef2;cursor:pointer;color:var(--muted)}
+.tab.active{background:#fff;color:var(--brand);font-weight:600}
+main{padding:0 20px 40px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:14px 16px}
+.filters{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+.filters label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.filters select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);min-width:110px}
+.chk{display:flex!important;flex-direction:row!important;align-items:center;gap:6px!important;color:var(--ink)!important;font-size:13px!important}
+.chip{display:inline-flex;gap:8px;align-items:center;background:var(--brand-l);color:var(--brand-d);padding:4px 10px;border-radius:999px;font-size:12px}
+.chip button{border:none;background:none;cursor:pointer;color:inherit;font-size:14px;padding:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .l{color:var(--muted);font-size:12px}
+.kpi .v{font-size:26px;font-weight:700;margin-top:2px}
+.kpi .s{color:var(--muted);font-size:12px}
+.up{color:var(--bad)} .down{color:var(--good)}
+.note{color:var(--muted);font-size:12px;margin:0 0 12px}
+.grid2{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:12px}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;margin-bottom:12px}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:14px}
+.card h3 small{font-weight:400;color:var(--muted)}
+.cwrap{position:relative;height:300px}
+#map{height:430px;border-radius:8px;background:#e8eef1}
+.legend{background:#fff;padding:8px 10px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.25);font-size:12px;line-height:1.6}
+.legend i{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-2px;border:1px solid #ccc}
+.kec-label{background:rgba(255,255,255,.8);border:none;box-shadow:none;font-size:10px;font-weight:600;text-align:center;padding:1px 4px;color:#222}
+table{border-collapse:collapse;width:100%}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right}
+tr.sel td{background:var(--brand-l)}
+.empty{text-align:center;padding:60px 20px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:16px}
+.empty h2{margin:0 0 6px}
+.empty p{color:var(--muted);max-width:560px;margin:6px auto}
+.modalBack{position:fixed;inset:0;background:rgba(15,23,32,.5);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 12px;z-index:2000}
+.modalBack[hidden]{display:none}
+.modal{background:#fff;border-radius:12px;max-width:900px;width:100%;padding:18px 20px}
+.modal h2{margin:0 0 2px}
+.modal h3{margin:16px 0 6px;font-size:14px}
+.muted{color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0}
+.row label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.row input,.row select,.mapgrid select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+.row input[type=number]{width:90px}
+.mapgrid{display:grid;grid-template-columns:230px 1fr;gap:6px 12px;align-items:center}
+.mapgrid label{font-size:13px}
+.req{color:var(--bad)}
+.rep{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:13px}
+.rep .ok{color:var(--good);font-weight:600}
+.rep .bad{color:var(--bad);font-weight:600}
+.rep ul{margin:4px 0 0;padding-left:18px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.popgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 14px;margin:10px 0}
+.popgrid label{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.popgrid input{width:110px;padding:5px 7px;border:1px solid var(--line);border-radius:6px}
+.sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:14px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">P2P</div>
+    <div><h1>Dashboard Pengendalian Penyakit</h1><p>Dinas Kesehatan Kabupaten Bantul</p></div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="btnUpload">Unggah data</button>
+    <button class="btn" id="btnPop">Data penduduk</button>
+    <button class="btn" id="btnSave">Simpan proyek</button>
+    <button class="btn" id="btnOpen">Buka proyek</button>
+    <button class="btn danger" id="btnClear">Hapus data</button>
+  </div>
+  <input type="file" id="fileData" accept=".xlsx,.xls,.csv" hidden>
+  <input type="file" id="fileProject" accept=".json" hidden>
+  <input type="file" id="fileGeo" accept=".geojson,.json" hidden>
+</header>
+
+<div class="warn" id="geoWarn" hidden>
+  Peta batas kecamatan (<code>data/bantul.geojson</code>) belum bisa dimuat. Pastikan halaman dibuka lewat Live Server,
+  bukan klik dua kali pada file. Atau pilih file GeoJSON secara manual:
+  <button class="btn small" id="btnGeo">Pilih file GeoJSON</button>
+</div>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <section id="empty" class="empty" hidden>
+    <h2>Belum ada data</h2>
+    <p>Unggah file Excel atau CSV hasil tarikan dari aplikasi program (misalnya DBD atau TB). Dashboard akan membaca file itu, memetakan kolomnya, lalu menampilkan peta dan grafik.</p>
+    <p>Data dihitung di browser ini saja. File tidak dikirim ke server mana pun.</p>
+    <button class="btn primary" id="btnUpload2">Unggah data pertama</button>
+  </section>
+
+  <section id="summary" hidden></section>
+
+  <section id="diseaseView" hidden>
+    <div class="panel">
+      <div class="filters">
+        <label>Tahun <select id="fYear"></select></label>
+        <label>Bulan dari <select id="fM1"></select></label>
+        <label>sampai <select id="fM2"></select></label>
+        <label>Bandingkan dengan tahun <select id="fCmp"></select></label>
+        <label>Ditampilkan di peta
+          <select id="fMetric">
+            <option value="count">Jumlah kasus</option>
+            <option value="inc">Insidens per 100.000 penduduk</option>
+          </select>
+        </label>
+        <label>Grafik tren per
+          <select id="fGran"><option value="month">Bulan</option><option value="week">Minggu</option></select>
+        </label>
+        <label class="chk"><input type="checkbox" id="fLabels"> Nama dan angka di peta</label>
+        <label class="chk"><input type="checkbox" id="fBase"> Peta dasar (butuh internet)</label>
+        <span class="chip" id="selChip" hidden></span>
+      </div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+    <p class="note" id="srcNote"></p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 id="mapTitle">Peta sebaran</h3>
+        <div id="map"></div>
+        <p class="note" style="margin:6px 0 0">Klik kecamatan untuk memfilter grafik lain. Klik lagi untuk membatalkan.</p>
+      </div>
+      <div class="card">
+        <h3>Peringkat kecamatan</h3>
+        <div class="cwrap" style="height:460px"><canvas id="chRank"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <h3 id="trendTitle">Tren</h3>
+      <div class="cwrap" style="height:280px"><canvas id="chTrend"></canvas></div>
+    </div>
+
+    <div class="grid3">
+      <div class="card"><h3>Kelompok umur</h3><div class="cwrap" style="height:260px"><canvas id="chAge"></canvas></div></div>
+      <div class="card"><h3>Jenis kelamin</h3><div class="cwrap" style="height:260px"><canvas id="chSex"></canvas></div></div>
+    </div>
+
+    <div class="cats" id="cats"></div>
+
+    <div class="card">
+      <h3>Rekap per kecamatan
+        <button class="btn small" id="btnXlsx" style="float:right">Unduh rekap (Excel)</button>
+      </h3>
+      <div style="overflow-x:auto"><table id="tbl"></table></div>
+    </div>
+  </section>
+</main>
+
+<div class="modalBack" id="modalBack" hidden><div class="modal" id="modal"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+'use strict';
+
+/* =====================================================================
+   KONFIGURASI
+   ===================================================================== */
+const GEOJSON_URL   = 'data/bantul.geojson';
+const GEO_NAME_PROP = 'NAMOBJ';                 // nama properti kecamatan di GeoJSON
+const STORE_KEY     = 'p2p_dashboard_v1';
+const POP_KEY       = 'p2p_penduduk_v1';
+const MIN_CELL      = 3;                        // kategori sensitif di bawah angka ini digabung
+const MONTH_LABEL   = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const MONTH_NAME    = {januari:1,februari:2,maret:3,april:4,mei:5,juni:6,juli:7,agustus:8,september:9,oktober:10,november:11,desember:12,
+                       jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,agu:8,agt:8,ags:8,sep:9,okt:10,nov:11,des:12};
+const PRESET_LAIN   = ['Malaria','HIV/AIDS','Kusta','Diare','ISPA','Hepatitis'];
+const AGE_GROUPS    = [['0-4',0,4],['5-14',5,14],['15-24',15,24],['25-34',25,34],['35-44',35,44],['45-54',45,54],['55-64',55,64],['65+',65,200]];
+const RAMP          = ['#fff1c9','#fdc77a','#f58d3d','#d9441f','#7f1d1d'];
+
+/* Adapter per penyakit: daftar kolom yang dicari dan "kata kunci" untuk menebaknya.
+   Untuk menambah penyakit baru cukup menambah satu blok seperti DBD/TB di bawah. */
+const ADAPTERS = {
+  DBD: {
+    label: 'DBD (Demam Berdarah Dengue)',
+    fields: [
+      {key:'kec',   label:'Kecamatan',                kind:'kec', req:true, aliases:[/kecamatan/i,/^desa$/i,/desa|kelurahan/i]},
+      {key:'tgl',   label:'Tanggal kasus',            kind:'date',req:true, aliases:[/tgl.*mulai.*sakit/i,/mulai.*sakit/i,/tanggal.*akses/i]},
+      {key:'sex',   label:'Jenis kelamin',            kind:'sex', aliases:[/^sex$/i,/jenis kelamin/i,/^jk$/i]},
+      {key:'umur',  label:'Umur (tahun)',             kind:'age', aliases:[/umur\s*thn/i,/umur.*tahun/i,/^umur$/i]},
+      {key:'nik',   label:'NIK (hanya untuk cek duplikat, tidak disimpan)', kind:'nik', aliases:[/^nik$/i]},
+      {key:'diag',  label:'Diagnosa',                 kind:'cat', aliases:[/^diagnosa$/i,/diagnos/i]},
+      {key:'akhir', label:'Keadaan akhir',            kind:'cat', aliases:[/^sembuh$/i,/cara pulang/i]},
+      {key:'faskes',label:'Faskes pelapor',           kind:'cat', aliases:[/nama faskes/i,/faskes/i]},
+      {key:'pkm',   label:'Puskesmas wilayah',        kind:'cat', aliases:[/^wilayah$/i,/puskesmas/i]}
+    ]
+  },
+  TB: {
+    label: 'TB (Tuberkulosis)',
+    fields: [
+      {key:'kab',   label:'Kabupaten/Kota pasien (untuk menyaring luar Bantul)', kind:'kab', aliases:[/pasien.*(kabupaten|kota)/i,/kabupaten\s*\/?\s*kota/i,/kabupaten/i]},
+      {key:'kec',   label:'Kecamatan',                kind:'kec', req:true, aliases:[/pasien.*kecamatan/i,/^kecamatan$/i,/kecamatan/i]},
+      {key:'tgl',   label:'Waktu kasus (kolom Bulan atau tanggal)', kind:'date',req:true, aliases:[/^bulan$/i,/(^|\|\s*)bulan$/i,/tanggal.*mulai.*pengobatan/i,/tgl.*mulai.*(obat|pengobatan)/i,/mulai.*pengobatan/i]},
+      {key:'sex',   label:'Jenis kelamin',            kind:'sex', aliases:[/jenis kelamin/i,/^sex$/i]},
+      {key:'umur',  label:'Umur (tahun)',             kind:'age', aliases:[/umur.*tahun/i,/^umur$/i,/umur/i]},
+      {key:'nik',   label:'NIK (hanya untuk cek duplikat, tidak disimpan)', kind:'nik', aliases:[/^nik$/i,/\bnik\b/i]},
+      {key:'status',label:'Status pengobatan',        kind:'cat', aliases:[/status pengobatan/i]},
+      {key:'akhir', label:'Hasil akhir pengobatan',    kind:'cat', aliases:[/hasil akhir pengobatan.*hasil/i,/hasil akhir/i]},
+      {key:'tipe',  label:'Tipe diagnosis',           kind:'cat', aliases:[/tipe diagnosis/i]},
+      {key:'lokasi',label:'Lokasi anatomi',           kind:'cat', aliases:[/lokasi anatomi/i]},
+      {key:'riwayat',label:'Riwayat pengobatan',      kind:'cat', aliases:[/riwayat pengobatan/i]},
+      {key:'hiv',   label:'Status HIV',               kind:'cat', sensitive:true, aliases:[/status hiv/i]},
+      {key:'dm',    label:'Riwayat DM',               kind:'cat', aliases:[/riwayat dm/i,/diabetes/i]},
+      {key:'faskes',label:'Fasyankes',                kind:'cat', aliases:[/nama fasyankes/i,/nama fas/i]}
+    ]
+  },
+  LAIN: {
+    label: 'Penyakit lain (satu baris = satu pasien)',
+    fields: [
+      {key:'kec',   label:'Kecamatan',                kind:'kec', req:true, aliases:[/kecamatan/i,/desa|kelurahan/i]},
+      {key:'tgl',   label:'Waktu kasus (tanggal atau kolom Bulan)', kind:'date',req:true, aliases:[/tanggal|tgl/i,/^bulan$/i]},
+      {key:'sex',   label:'Jenis kelamin',            kind:'sex', aliases:[/jenis kelamin/i,/^sex$/i,/^jk$/i]},
+      {key:'umur',  label:'Umur (tahun)',             kind:'age', aliases:[/umur/i]},
+      {key:'nik',   label:'NIK (hanya untuk cek duplikat, tidak disimpan)', kind:'nik', aliases:[/^nik$/i]},
+      {key:'c1',    label:'Kategori 1 (bebas)',       kind:'cat', aliases:[]},
+      {key:'c2',    label:'Kategori 2 (bebas)',       kind:'cat', aliases:[]},
+      {key:'c3',    label:'Kategori 3 (bebas)',       kind:'cat', aliases:[]}
+    ]
+  }
+};
+
+/*LOGIC_START*/
+/* =====================================================================
+   LOGIKA MURNI (tanpa DOM): membaca header, menebak kolom, membersihkan data
+   ===================================================================== */
+let KEC_NAMES = [];
+let KEC_MAP = {};
+
+function norm(s){
+  return String(s == null ? '' : s).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function setKecNames(list){
+  KEC_NAMES = list.slice(); KEC_MAP = {};
+  list.forEach(n => { KEC_MAP[norm(n)] = n; });
+}
+function lev(a, b){
+  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+  let prev = Array.from({length:n+1}, (_,j)=>j);
+  for (let i=1;i<=m;i++){
+    const cur=[i];
+    for (let j=1;j<=n;j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function matchKec(raw, splitComma){
+  let s = String(raw == null ? '' : raw);
+  if (splitComma && s.indexOf(',') >= 0) s = s.split(',').pop();
+  let n = norm(s).replace(/^(kec|kecamatan) /,'');
+  if (!n) return null;
+  if (KEC_MAP[n]) return KEC_MAP[n];
+  const tol = n.length >= 8 ? 2 : 1;
+  let best = null, bd = 99, tie = false;
+  for (const k in KEC_MAP){
+    const d = lev(n, k);
+    if (d < bd){ bd = d; best = KEC_MAP[k]; tie = false; } else if (d === bd) tie = true;
+  }
+  return (bd <= tol && !tie && n.length >= 5) ? best : null;
+}
+const pad2 = n => String(n).padStart(2,'0');
+function isoDate(y,m,d){
+  if (!(y>=1990 && y<=2100 && m>=1 && m<=12 && d>=1 && d<=31)) return null;
+  return y + '-' + pad2(m) + '-' + pad2(d);
+}
+function parseDate(v){
+  if (v == null || v === '') return null;
+  if (typeof v === 'number'){
+    if (v > 20000 && v < 80000){
+      const d = new Date(Math.round((v - 25569) * 864e5));
+      return isoDate(d.getUTCFullYear(), d.getUTCMonth()+1, d.getUTCDate());
+    }
+    return null;
+  }
+  if (v instanceof Date) return isoDate(v.getFullYear(), v.getMonth()+1, v.getDate());
+  const s = String(v).trim();
+  let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (m){ let y=+m[3]; if (y<100) y+=2000; return isoDate(y,+m[2],+m[1]); }
+  m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  if (m) return isoDate(+m[1],+m[2],+m[3]);
+  m = s.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if (m && MONTH_NAME[m[2].toLowerCase()]) return isoDate(+m[3], MONTH_NAME[m[2].toLowerCase()], +m[1]);
+  m = s.match(/^([A-Za-z]+)\s+(\d{4})$/);
+  if (m && MONTH_NAME[m[1].toLowerCase()]) return isoDate(+m[2], MONTH_NAME[m[1].toLowerCase()], 1);
+  return null;
+}
+/* Kolom "Bulan" yang hanya berisi nama bulan (Januari...) atau angka 1-12. Tahunnya dari pilihan pengguna. */
+function parseMonthName(v){
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return (v >= 1 && v <= 12 && Math.floor(v) === v) ? v : null;
+  const s = norm(v);
+  if (MONTH_NAME[s]) return MONTH_NAME[s];
+  if (/^\d{1,2}$/.test(s) && +s >= 1 && +s <= 12) return +s;
+  return null;
+}
+/* Menebak tahun data dari blok judul file (mis. "Periode Januari - November 2026"). */
+function guessYear(aoa){
+  const now = new Date().getFullYear(); const found = [];
+  for (let r=0; r<Math.min(aoa.length, 15); r++)
+    (aoa[r] || []).forEach(v => { if (typeof v === 'string') (v.match(/\b20\d\d\b/g) || []).forEach(y => found.push(+y)); });
+  const ok = found.filter(y => y <= now + 1);
+  const best = ok.length ? Math.max(...ok) : now;
+  return best < now - 5 ? now : best;
+}
+function fnv(str){
+  let h = 0x811c9dc5;
+  for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+const isEmptyVal = v => v == null || String(v).trim() === '';
+
+/* Mendeteksi baris header dan baris awal data.
+   - baris data pertama = baris yang punya >= 2 sel berupa angka atau tanggal
+   - baris header = baris "lebar" tepat sebelum data (blok judul laporan di atasnya dilewati)
+   - baris nomor kolom seperti (1) (2) (3) atau 1 2 3 dilewati */
+function detectLayout(aoa){
+  const lim = Math.min(aoa.length, 60);
+  const cnt = r => (aoa[r] || []).reduce((n,v) => n + (isEmptyVal(v) ? 0 : 1), 0);
+  const numLike = v => typeof v === 'number' || (typeof v === 'string' && /^\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}$/.test(v.trim()));
+  const isNumbering = r => {
+    const vals = (aoa[r] || []).filter(v => !isEmptyVal(v));
+    if (vals.length < 5) return false;
+    const paren = vals.filter(v => typeof v === 'string' && /^\(\d{1,3}\)$/.test(v.trim())).length;
+    if (paren / vals.length >= 0.8) return true;
+    const nums = vals.filter(v => typeof v === 'number');
+    return nums.length === vals.length && nums.every((v,i) => i === 0 || v === nums[i-1] + 1);
+  };
+  let first = 0; while (first < lim && cnt(first) < 2) first++;
+  if (first >= lim) return {h0:0, h1:0, d0:1};
+  let d0 = -1;
+  for (let r = first + 1; r < lim; r++){
+    if (isNumbering(r)) continue;
+    let n = 0; for (const v of (aoa[r] || [])) if (numLike(v)) n++;
+    if (n >= 2){ d0 = r; break; }
+  }
+  if (d0 < 0) d0 = first + 1;
+  const cand = [];
+  for (let r = first; r < d0; r++) if (!isNumbering(r) && cnt(r) > 0) cand.push(r);
+  if (!cand.length) return {h0:first, h1:first, d0};
+  const maxNe = Math.max(...cand.map(cnt));
+  const thr = Math.max(3, 0.25 * maxNe);
+  const h0 = cand.find(r => cnt(r) >= thr);
+  const h1 = cand[cand.length - 1];
+  return {h0, h1: Math.max(h0, h1), d0};
+}
+
+/* Meratakan header bertingkat / sel merger menjadi satu nama per kolom,
+   mis. "Alamat Lengkap Pasien | Kecamatan". */
+function flattenHeaders(aoa, merges, h0, h1, d0){
+  let ncols = 0;
+  for (let r=h0; r<=Math.min(aoa.length-1, Math.max(h1, d0)+5); r++) ncols = Math.max(ncols, (aoa[r]||[]).length);
+  const cellAt = (r,c) => {
+    for (const m of merges){
+      if (r>=m.s.r && r<=m.e.r && c>=m.s.c && c<=m.e.c) return (aoa[m.s.r]||[])[m.s.c];
+    }
+    return (aoa[r]||[])[c];
+  };
+  const cols = []; const seen = {};
+  for (let c=0;c<ncols;c++){
+    const parts = [];
+    for (let r=h0;r<=h1;r++){
+      const v = cellAt(r,c);
+      if (isEmptyVal(v)) continue;
+      const t = String(v).replace(/\s+/g,' ').trim();
+      if (!parts.length || parts[parts.length-1] !== t) parts.push(t);
+    }
+    let name = parts.join(' | ');
+    const letter = XLSX.utils.encode_col(c);
+    if (!name) name = 'Kolom ' + letter;
+    seen[name] = (seen[name]||0) + 1;
+    if (seen[name] > 1) name += ' (' + seen[name] + ')';
+    cols.push({i:c, letter, name});
+  }
+  return cols;
+}
+function guessMapping(adapter, cols){
+  const map = {}; const used = new Set();
+  adapter.fields.forEach(f => {
+    map[f.key] = -1;
+    for (const re of f.aliases){
+      const hit = cols.find(c => !used.has(c.i) && re.test(c.name));
+      if (hit){ map[f.key] = hit.i; used.add(hit.i); break; }
+    }
+  });
+  return map;
+}
+function guessType(cols, fileName){
+  const t = (cols.map(c=>c.name).join(' ') + ' ' + fileName).toLowerCase();
+  if (/paduan oat|sitb|tbc|tuberk/.test(t)) return 'TB';
+  if (/mulai sakit|trombosit|hematokrit|dbd|dengue/.test(t)) return 'DBD';
+  return 'LAIN';
+}
+function autoSplit(aoa, d0, idx){
+  if (idx < 0) return false;
+  let n = 0, c = 0;
+  for (let r=d0; r<Math.min(aoa.length, d0+200); r++){
+    const v = (aoa[r]||[])[idx]; if (isEmptyVal(v)) continue;
+    n++; if (String(v).indexOf(',') >= 0) c++;
+  }
+  return n > 0 && c / n > 0.3;
+}
+function parseSex(v){
+  const s = norm(v);
+  if (/^(l|lk|laki|pria)/.test(s)) return 'L';
+  if (/^(p|pr|perempuan|wanita)/.test(s)) return 'P';
+  return null;
+}
+function parseAge(v){
+  const n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(',','.'));
+  if (!isFinite(n) || n < 0 || n > 120) return null;
+  return Math.floor(n);
+}
+function catVal(v){
+  if (isEmptyVal(v)) return '(tidak diisi)';
+  let s = String(v).replace(/\s+/g,' ').trim();
+  if (s === '-' || s === '--') return '(tidak diisi)';
+  if (s.length > 60) s = s.slice(0,60);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/* Mengubah baris-baris file menjadi catatan bersih (tanpa nama/NIK/alamat). */
+function buildRecords(aoa, map, opt){
+  const adapter = ADAPTERS[opt.type];
+  const rep = {raw:0, kept:0, luar:0, unmapped:0, badDate:0, dup:0, total:0, monthOnlyRows:0, unmatched:{}};
+  const recs = [];
+  const seen = new Set(opt.existingHashes || []);
+  const cats = adapter.fields.filter(f => f.kind === 'cat');
+  for (let r=opt.d0; r<aoa.length; r++){
+    const row = aoa[r]; if (!row) continue;
+    let ne = 0; for (const v of row) if (!isEmptyVal(v)) ne++;
+    if (ne < 2) continue;
+    const first = row.find(v => !isEmptyVal(v));
+    if (typeof first === 'string' && /^(total|jumlah|grand total)\b/i.test(first.trim())){ rep.total++; continue; }
+    rep.raw++;
+    const get = k => (map[k] >= 0 ? row[map[k]] : null);
+
+    if (map.kab >= 0){
+      const kb = norm(get('kab'));
+      if (kb && kb.indexOf('bantul') < 0){ rep.luar++; continue; }
+    }
+    const kec = matchKec(get('kec'), opt.split);
+    if (!kec){
+      rep.unmapped++;
+      const raw = isEmptyVal(get('kec')) ? '(kosong)' : String(get('kec')).trim();
+      rep.unmatched[raw] = (rep.unmatched[raw] || 0) + 1;
+      continue;
+    }
+    let t = parseDate(get('tgl'));
+    if (!t && opt.year){
+      const mo = parseMonthName(get('tgl'));
+      if (mo){ t = isoDate(+opt.year, mo, 1); rep.monthOnlyRows++; }
+    }
+    if (!t){ rep.badDate++; continue; }
+    let h = null;
+    if (map.nik >= 0 && !isEmptyVal(get('nik'))){
+      h = fnv(String(get('nik')).trim() + '|' + t);
+      if (seen.has(h)){ rep.dup++; continue; }
+      seen.add(h);
+    }
+    const c = {};
+    cats.forEach(f => { if (map[f.key] >= 0) c[f.key] = catVal(row[map[f.key]]); });
+    recs.push({k:kec, t, s: map.sex>=0 ? parseSex(get('sex')) : null, u: map.umur>=0 ? parseAge(get('umur')) : null, c, h});
+  }
+  rep.kept = recs.length;
+  return {records: recs, rep};
+}
+function isoWeekKey(t){
+  const p = t.split('-').map(Number);
+  const dt = new Date(Date.UTC(p[0], p[1]-1, p[2]));
+  const dow = (dt.getUTCDay() + 6) % 7;
+  dt.setUTCDate(dt.getUTCDate() - dow + 3);
+  const wy = dt.getUTCFullYear();
+  const jan4 = new Date(Date.UTC(wy,0,4));
+  const wk = 1 + Math.round(((dt - jan4) / 864e5 - 3 + ((jan4.getUTCDay() + 6) % 7)) / 7);
+  return wy + '-W' + pad2(wk);
+}
+function ageGroup(u){
+  for (const g of AGE_GROUPS) if (u >= g[1] && u <= g[2]) return g[0];
+  return null;
+}
+/*LOGIC_END*/
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const state = {
+  data: {},            // id -> {adapter, records, meta}
+  pop: {},             // kecamatan -> jumlah penduduk
+  current: 'RINGKASAN',
+  year: 'all', cmp: 'none', m1: 1, m2: 12,
+  metric: 'count', gran: 'month',
+  selKec: null, showLabels: false, showBase: false,
+  imp: null
+};
+let GEO = null, map = null, geoLayer = null, baseLayer = null, legendDiv = null;
+const charts = {};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtN = n => (n == null || isNaN(n)) ? '-' : Number(n).toLocaleString('id-ID');
+const fmtD = (n, d) => (n == null || isNaN(n)) ? '-' : Number(n).toLocaleString('id-ID', {minimumFractionDigits:d, maximumFractionDigits:d});
+
+/* =====================================================================
+   PENYIMPANAN (di browser) + PROYEK
+   ===================================================================== */
+function saveStore(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({data: state.data})); }
+  catch (e){ alert('Penyimpanan di browser penuh. Gunakan tombol "Simpan proyek" untuk menyimpan data ke file.'); }
+}
+function savePop(){ try { localStorage.setItem(POP_KEY, JSON.stringify(state.pop)); } catch(e){} }
+function loadStore(){
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (s && s.data) state.data = s.data;
+    const p = JSON.parse(localStorage.getItem(POP_KEY) || 'null');
+    if (p) state.pop = p;
+  } catch (e){}
+}
+function download(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function saveProject(){
+  const blob = new Blob([JSON.stringify({version:1, data: state.data, pop: state.pop})], {type:'application/json'});
+  download(blob, 'proyek-dashboard-p2p.json');
+}
+function openProject(file){
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const p = JSON.parse(fr.result);
+      if (!p.data) throw new Error('format salah');
+      state.data = p.data; state.pop = p.pop || {};
+      saveStore(); savePop();
+      state.current = Object.keys(state.data)[0] || 'RINGKASAN';
+      resetFilters(); refreshYearOptions(); renderAll();
+    } catch (e){ alert('File proyek tidak bisa dibaca: ' + e.message); }
+  };
+  fr.readAsText(file);
+}
+
+/* =====================================================================
+   IMPOR FILE
+   ===================================================================== */
+function loadFileBuffer(buf, fileName){
+  let wb;
+  try { wb = XLSX.read(buf, {type:'array'}); }
+  catch (e){ alert('File tidak bisa dibaca: ' + e.message); return; }
+  if (!wb.SheetNames.length){ alert('File tidak berisi sheet.'); return; }
+  const I = state.imp = {wb, fileName, type:'DBD', name:'', mode:'replaceYear', year:null, sheet:null, aoa:[], merges:[], h0:0, h1:0, d0:1, cols:[], map:{}, split:false, result:null};
+  loadSheet(wb.SheetNames[0]);
+  I.year = guessYear(I.aoa);
+  I.type = guessType(I.cols, fileName);
+  I.map = guessMapping(ADAPTERS[I.type], I.cols);
+  I.split = autoSplit(I.aoa, I.d0, I.map.kec);
+  renderImport();
+}
+/* Membaca sheet mulai dari sel A1 (bukan dari sel pertama yang terisi), supaya nomor baris/kolom
+   sama dengan di Excel dan koordinat sel merger cocok. */
+function readSheetAOA(ws){
+  if (!ws['!ref']) return [];
+  const rg = XLSX.utils.decode_range(ws['!ref']);
+  return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null, blankrows:true, range:{s:{r:0,c:0}, e:{r:rg.e.r, c:rg.e.c}}});
+}
+function loadSheet(name){
+  const I = state.imp; I.sheet = name;
+  const ws = I.wb.Sheets[name];
+  I.aoa = readSheetAOA(ws);
+  I.merges = ws['!merges'] || [];
+  const L = detectLayout(I.aoa); I.h0 = L.h0; I.h1 = L.h1; I.d0 = L.d0;
+  I.cols = flattenHeaders(I.aoa, I.merges, I.h0, I.h1, I.d0);
+}
+function recomputeCols(){
+  const I = state.imp;
+  I.cols = flattenHeaders(I.aoa, I.merges, I.h0, I.h1, I.d0);
+  I.map = guessMapping(ADAPTERS[I.type], I.cols);
+  I.split = autoSplit(I.aoa, I.d0, I.map.kec);
+}
+function renderImport(){
+  const I = state.imp, ad = ADAPTERS[I.type];
+  const typeVal = I.type !== 'LAIN' ? I.type : (PRESET_LAIN.indexOf(I.name) >= 0 ? 'LAIN|' + I.name : 'LAIN|');
+  const colOpts = sel => '<option value="-1">(tidak dipakai)</option>' + I.cols.map(c =>
+    `<option value="${c.i}" ${c.i === sel ? 'selected' : ''}>${esc(c.letter)} - ${esc(c.name.length > 70 ? c.name.slice(0,70) + '...' : c.name)}</option>`).join('');
+  $('modal').innerHTML = `
+    <h2>Impor data</h2>
+    <p class="muted">${esc(I.fileName)}</p>
+    <div class="row">
+      <label>Nama penyakit
+        <select id="iType">
+          <option value="DBD" ${typeVal==='DBD'?'selected':''}>DBD (Demam Berdarah Dengue)</option>
+          <option value="TB" ${typeVal==='TB'?'selected':''}>TB (Tuberkulosis)</option>
+          ${PRESET_LAIN.map(n => `<option value="LAIN|${esc(n)}" ${typeVal==='LAIN|'+n?'selected':''}>${esc(n)} (format umum)</option>`).join('')}
+          <option value="LAIN|" ${typeVal==='LAIN|'?'selected':''}>Penyakit lain (ketik nama)</option>
+        </select>
+      </label>
+      <label id="iNameWrap" ${typeVal==='LAIN|'?'':'hidden'}>Nama penyakit lain
+        <input id="iName" value="${esc(I.name)}" placeholder="mis. Leptospirosis">
+      </label>
+      <label>Tahun data
+        <input type="number" id="iYear" min="2000" max="2100" value="${I.year || ''}">
+      </label>
+      <label>Sheet
+        <select id="iSheet">${I.wb.SheetNames.map(n => `<option ${n===I.sheet?'selected':''}>${esc(n)}</option>`).join('')}</select>
+      </label>
+    </div>
+    <div class="row">
+      <label>Header mulai baris <input type="number" min="1" id="iH0" value="${I.h0+1}"></label>
+      <label>sampai baris <input type="number" min="1" id="iH1" value="${I.h1+1}"></label>
+      <label>Data mulai baris <input type="number" min="1" id="iD0" value="${I.d0+1}"></label>
+    </div>
+    <p class="note">Sistem menebak baris header (termasuk header bertingkat/merger) dan baris data. Ubah angkanya kalau tebakannya meleset.</p>
+    <p class="note"><b>Tahun data</b> dipakai bila kolom waktu hanya berisi nama bulan (mis. kolom Bulan pada register TB). Bila kolom waktu berisi tanggal lengkap, tahun diambil dari tanggalnya. Unggah file tiap tahun secara terpisah supaya bisa dibandingkan antar tahun.</p>
+    <h3>Pasangkan kolom <span class="muted" style="font-weight:400">(<span class="req">*</span> wajib)</span></h3>
+    <div class="mapgrid">
+      ${ad.fields.map(f => `<label>${esc(f.label)}${f.req ? ' <span class="req">*</span>' : ''}</label>
+        <select data-key="${f.key}">${colOpts(I.map[f.key] == null ? -1 : I.map[f.key])}</select>`).join('')}
+    </div>
+    <label class="chk" style="margin-top:10px;display:flex;gap:6px;align-items:center">
+      <input type="checkbox" id="iSplit" ${I.split ? 'checked' : ''}>
+      Kolom kecamatan berformat "Desa, Kecamatan": ambil teks setelah koma terakhir
+    </label>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+      <label class="chk" style="display:flex;gap:6px;align-items:center"><input type="radio" name="iMode" value="replaceYear" ${I.mode==='replaceYear'?'checked':''}> Ganti data penyakit ini untuk tahun yang sama (tahun lain tetap ada)</label>
+      <label class="chk" style="display:flex;gap:6px;align-items:center"><input type="radio" name="iMode" value="append" ${I.mode==='append'?'checked':''}> Tambahkan ke data yang sudah ada (duplikat dilewati)</label>
+      <label class="chk" style="display:flex;gap:6px;align-items:center"><input type="radio" name="iMode" value="replaceAll" ${I.mode==='replaceAll'?'checked':''}> Ganti seluruh data penyakit ini (semua tahun)</label>
+    </div>
+    <div id="iReport"></div>
+    <div class="mfoot">
+      <button class="btn" id="iCancel">Batal</button>
+      <button class="btn primary" id="iOk">Impor</button>
+    </div>`;
+  $('modalBack').hidden = false;
+
+  $('iType').onchange = e => {
+    const v = e.target.value;
+    if (v.indexOf('LAIN|') === 0){ I.type = 'LAIN'; const nm = v.slice(5); if (nm) I.name = nm; else if (PRESET_LAIN.indexOf(I.name) >= 0) I.name = ''; }
+    else I.type = v;
+    recomputeCols(); renderImport();
+  };
+  $('iYear').onchange = e => { I.year = +e.target.value || null; runPreview(); };
+  $('iSheet').onchange = e => { loadSheet(e.target.value); recomputeCols(); renderImport(); };
+  ['iH0','iH1','iD0'].forEach(id => { $(id).onchange = () => {
+    I.h0 = Math.max(0, (+$('iH0').value || 1) - 1);
+    I.h1 = Math.max(I.h0, (+$('iH1').value || 1) - 1);
+    I.d0 = Math.max(I.h1 + 1, (+$('iD0').value || 1) - 1);
+    recomputeCols(); renderImport();
+  }; });
+  document.querySelectorAll('#modal select[data-key]').forEach(s => { s.onchange = () => {
+    I.map[s.dataset.key] = +s.value;
+    if (s.dataset.key === 'kec') { I.split = autoSplit(I.aoa, I.d0, I.map.kec); $('iSplit').checked = I.split; }
+    runPreview();
+  }; });
+  $('iSplit').onchange = e => { I.split = e.target.checked; runPreview(); };
+  $('iName').oninput = e => { I.name = e.target.value; };
+  document.querySelectorAll('input[name=iMode]').forEach(r => { r.onchange = () => { I.mode = r.value; runPreview(); }; });
+  $('iCancel').onclick = closeModal;
+  $('iOk').onclick = doImport;
+  runPreview();
+}
+function importId(){
+  const I = state.imp;
+  return I.type === 'LAIN' ? ((I.name || '').trim() || 'Lainnya') : I.type;
+}
+function runPreview(){
+  const I = state.imp, ad = ADAPTERS[I.type];
+  const missing = ad.fields.filter(f => f.req && !(I.map[f.key] >= 0));
+  let html = '';
+  if (missing.length){
+    html = `<p class="bad">Kolom wajib belum dipilih: ${missing.map(f => esc(f.label)).join(', ')}.</p>`;
+    I.result = null; $('iOk').disabled = true;
+  } else {
+    const existing = (I.mode === 'append' && state.data[importId()]) ? state.data[importId()].records.map(r => r.h).filter(Boolean) : [];
+    const res = I.result = buildRecords(I.aoa, I.map, {type:I.type, d0:I.d0, split:I.split, year:I.year, existingHashes:existing});
+    const rep = res.rep;
+    const um = Object.entries(rep.unmatched).sort((a,b) => b[1]-a[1]).slice(0,6);
+    html = `<p><span class="${rep.kept ? 'ok' : 'bad'}">${fmtN(rep.kept)} kasus siap diimpor</span> dari ${fmtN(rep.raw)} baris data.</p>
+      <ul>
+        ${rep.dup ? `<li>${fmtN(rep.dup)} baris duplikat (NIK dan tanggal sama) dilewati</li>` : ''}
+        ${rep.luar ? `<li>${fmtN(rep.luar)} baris pasien dari luar Kabupaten Bantul dikecualikan</li>` : ''}
+        ${rep.unmapped ? `<li>${fmtN(rep.unmapped)} baris kecamatannya tidak dikenali atau kosong, tidak masuk peta. Contoh: ${um.map(([k,n]) => `"${esc(k)}" (${n})`).join(', ')}</li>` : ''}
+        ${rep.monthOnlyRows ? `<li>${fmtN(rep.monthOnlyRows)} baris waktunya dibaca dari nama bulan dan diberi tahun ${esc(I.year)}</li>` : ''}
+        ${rep.badDate ? `<li>${fmtN(rep.badDate)} baris tanggalnya tidak terbaca</li>` : ''}
+        ${rep.total ? `<li>${fmtN(rep.total)} baris total/jumlah dilewati</li>` : ''}
+      </ul>`;
+    if (res.records.length){
+      const cats = ad.fields.filter(f => f.kind === 'cat' && I.map[f.key] >= 0);
+      html += `<p class="muted" style="margin:8px 0 2px">Contoh hasil pembacaan (nama, NIK, alamat tidak ikut):</p>
+        <div style="overflow-x:auto"><table><tr><th>Kecamatan</th><th>Tanggal</th><th>JK</th><th>Umur</th>${cats.map(f => `<th>${esc(f.label)}</th>`).join('')}</tr>
+        ${res.records.slice(0,4).map(r => `<tr><td>${esc(r.k)}</td><td>${esc(r.t)}</td><td>${esc(r.s||'-')}</td><td>${r.u==null?'-':r.u}</td>${cats.map(f => `<td>${esc(r.c[f.key]||'-')}</td>`).join('')}</tr>`).join('')}
+        </table></div>`;
+    }
+    $('iOk').disabled = !res.records.length;
+  }
+  $('iReport').innerHTML = `<div class="rep">${html}</div>`;
+}
+function doImport(){
+  const I = state.imp; if (!I.result || !I.result.records.length) return;
+  const id = importId();
+  let records = I.result.records;
+  const old = state.data[id];
+  if (old && I.mode === 'append') records = old.records.concat(records);
+  else if (old && I.mode === 'replaceYear'){
+    const ys = new Set(records.map(r => r.t.slice(0,4)));
+    records = old.records.filter(r => !ys.has(r.t.slice(0,4))).concat(records);
+  }
+  const rp = I.result.rep;
+  const monthOnly = (rp.monthOnlyRows > 0 && rp.monthOnlyRows >= rp.kept * 0.5) || !!(old && old.meta.monthOnly && I.mode !== 'replaceAll');
+  const catLabels = {};
+  ADAPTERS[I.type].fields.filter(f => f.kind === 'cat' && I.map[f.key] >= 0).forEach(f => {
+    const col = I.cols.find(c => c.i === I.map[f.key]); catLabels[f.key] = (I.type === 'LAIN' && col) ? col.name.split(' | ').pop() : f.label;
+  });
+  state.data[id] = {adapter: I.type, records, meta: {file: I.fileName, at: new Date().toISOString(), rep: I.result.rep, catLabels, monthOnly}};
+  saveStore();
+  state.current = id; resetFilters();
+  closeModal(); refreshYearOptions(); renderAll();
+}
+function closeModal(){ $('modalBack').hidden = true; $('modal').innerHTML = ''; state.imp = null; }
+
+/* =====================================================================
+   DATA PENDUDUK
+   ===================================================================== */
+function openPop(){
+  const names = KEC_NAMES.length ? KEC_NAMES : [];
+  if (!names.length){ alert('Peta belum termuat, jadi daftar kecamatan belum tersedia.'); return; }
+  $('modal').innerHTML = `<h2>Data penduduk per kecamatan</h2>
+    <p class="muted">Dipakai untuk menghitung insidens per 100.000 penduduk. Isi dengan jumlah penduduk tahun yang sesuai (sumber: BPS/Dukcapil). Boleh dikosongkan.</p>
+    <div class="popgrid">${names.map(n => `<label>${esc(n)} <input type="number" min="0" data-k="${esc(n)}" value="${state.pop[n] || ''}"></label>`).join('')}</div>
+    <div class="mfoot"><button class="btn" id="pCancel">Batal</button><button class="btn primary" id="pOk">Simpan</button></div>`;
+  $('modalBack').hidden = false;
+  $('pCancel').onclick = closeModal;
+  $('pOk').onclick = () => {
+    const p = {};
+    document.querySelectorAll('#modal input[data-k]').forEach(i => { if (+i.value > 0) p[i.dataset.k] = +i.value; });
+    state.pop = p; savePop(); closeModal(); refreshYearOptions(); renderAll();
+  };
+}
+const popAvailable = () => Object.keys(state.pop).length > 0;
+
+/* =====================================================================
+   FILTER DAN AGREGASI
+   ===================================================================== */
+const mIdx = t => (+t.slice(0,4)) * 12 + (+t.slice(5,7) - 1);
+const inMonths = r => { const m = +r.t.slice(5,7); return m >= state.m1 && m <= state.m2; };
+function inPeriod(r){
+  if (state.year !== 'all' && r.t.slice(0,4) !== state.year) return false;
+  const m = +r.t.slice(5,7);
+  return m >= state.m1 && m <= state.m2;
+}
+function countBy(recs, fn){
+  const o = {}; recs.forEach(r => { const k = fn(r); if (k != null) o[k] = (o[k] || 0) + 1; }); return o;
+}
+function metricValue(name, count){
+  if (state.metric === 'count') return count;
+  const p = state.pop[name];
+  return p > 0 ? count / p * 1e5 : null;
+}
+function periodText(){
+  const y = state.year === 'all' ? 'Semua tahun' : state.year;
+  return (state.m1 === 1 && state.m2 === 12) ? y : `${y}, ${MONTH_LABEL[state.m1-1]}-${MONTH_LABEL[state.m2-1]}`;
+}
+function curDs(){ return state.data[state.current]; }
+
+function yearsOf(ds){ return ds ? [...new Set(ds.records.map(r => r.t.slice(0,4)))].sort() : []; }
+function autoCmp(){
+  const ys = yearsOf(curDs());
+  state.cmp = (state.year !== 'all' && ys.indexOf(String(+state.year - 1)) >= 0) ? String(+state.year - 1) : 'none';
+}
+function resetFilters(){
+  state.selKec = null; state.m1 = 1; state.m2 = 12;
+  const ys = yearsOf(curDs());
+  state.year = ys.length ? ys[ys.length - 1] : 'all';
+  autoCmp();
+}
+function refreshYearOptions(){
+  const ds = curDs();
+  const years = yearsOf(ds).reverse();
+  $('fYear').innerHTML = '<option value="all">Semua</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+  if (state.year !== 'all' && years.indexOf(state.year) < 0) state.year = 'all';
+  $('fYear').value = state.year;
+  if (state.cmp !== 'none' && (state.year === 'all' || years.indexOf(state.cmp) < 0 || state.cmp === state.year)) state.cmp = 'none';
+  $('fCmp').innerHTML = '<option value="none">Tidak membandingkan</option>' + years.filter(y => y !== state.year).map(y => `<option value="${y}">${y}</option>`).join('');
+  $('fCmp').value = state.cmp; $('fCmp').disabled = (state.year === 'all');
+  const monthOpts = MONTH_LABEL.map((m,i) => `<option value="${i+1}">${m}</option>`).join('');
+  $('fM1').innerHTML = monthOpts; $('fM2').innerHTML = monthOpts;
+  $('fM1').value = state.m1; $('fM2').value = state.m2;
+  $('fMetric').value = state.metric;
+  $('fMetric').querySelector('option[value=inc]').disabled = !popAvailable();
+  if (!popAvailable() && state.metric === 'inc'){ state.metric = 'count'; $('fMetric').value = 'count'; }
+  const monthOnly = !!(ds && ds.meta.monthOnly);
+  $('fGran').querySelector('option[value=week]').disabled = monthOnly;
+  if (monthOnly) state.gran = 'month';
+  $('fGran').value = state.gran;
+}
+
+/* =====================================================================
+   TAMPILAN
+   ===================================================================== */
+function renderTabs(){
+  const ids = Object.keys(state.data);
+  const items = ['RINGKASAN'].concat(ids);
+  $('tabs').innerHTML = ids.length ? items.map(id =>
+    `<div class="tab ${id === state.current ? 'active' : ''}" data-id="${esc(id)}">${id === 'RINGKASAN' ? 'Ringkasan' : esc(id)}</div>`).join('') : '';
+  document.querySelectorAll('#tabs .tab').forEach(t => { t.onclick = () => {
+    state.current = t.dataset.id; resetFilters(); refreshYearOptions(); renderAll();
+  }; });
+}
+function renderAll(){
+  renderTabs();
+  const has = Object.keys(state.data).length > 0;
+  if (!has) state.current = 'RINGKASAN';
+  if (has && state.current !== 'RINGKASAN' && !state.data[state.current]) state.current = 'RINGKASAN';
+  $('empty').hidden = has;
+  $('summary').hidden = !(has && state.current === 'RINGKASAN');
+  $('diseaseView').hidden = !(has && state.current !== 'RINGKASAN');
+  if (!has) return;
+  if (state.current === 'RINGKASAN') renderSummary(); else renderDisease();
+}
+function topKec(recs){
+  const o = countBy(recs, r => r.k);
+  const e = Object.entries(o).sort((a,b) => b[1]-a[1]);
+  return e.length ? e[0] : null;
+}
+function renderSummary(){
+  const ids = Object.keys(state.data);
+  $('summary').innerHTML = `<div class="panel"><b>Ringkasan semua penyakit</b>
+    <p class="note" style="margin:4px 0 0">Klik tab penyakit di atas untuk melihat peta dan grafik rinci.</p></div>
+    <div class="sumgrid">${ids.map(id => {
+      const ds = state.data[id], recs = ds.records;
+      const ts = recs.map(r => r.t).sort();
+      const top = topKec(recs);
+      return `<div class="card"><h3>${esc(id)} <small>${esc(ADAPTERS[ds.adapter] ? ADAPTERS[ds.adapter].label : '')}</small></h3>
+        <div class="kpi" style="border:none;padding:0"><div class="v">${fmtN(recs.length)}</div><div class="l">kasus tercatat</div></div>
+        <p class="note" style="margin:8px 0 0">Rentang tanggal: ${ts.length ? ts[0] + ' s.d. ' + ts[ts.length-1] : '-'}<br>
+        Kecamatan tertinggi: ${top ? esc(top[0]) + ' (' + fmtN(top[1]) + ')' : '-'}<br>
+        Sumber: ${esc(ds.meta.file)}</p></div>`;
+    }).join('')}</div>`;
+}
+
+function renderDisease(){
+  const ds = curDs(), ad = ADAPTERS[ds.adapter];
+  const all = ds.records;
+  const recs = all.filter(inPeriod);                              // untuk peta & peringkat
+  const recsSel = state.selKec ? recs.filter(r => r.k === state.selKec) : recs;   // untuk grafik lain
+  const names = KEC_NAMES.length ? KEC_NAMES : [...new Set(all.map(r => r.k))].sort();
+  const byKec = countBy(recs, r => r.k);
+  const cmpOn = state.year !== 'all' && state.cmp !== 'none';
+  const cmpRecs = cmpOn ? all.filter(r => r.t.slice(0,4) === state.cmp && inMonths(r)) : null;
+  const cmpSel = cmpRecs ? (state.selKec ? cmpRecs.filter(r => r.k === state.selKec) : cmpRecs) : null;
+  const cmpByKec = cmpRecs ? countBy(cmpRecs, r => r.k) : null;
+
+  $('selChip').hidden = !state.selKec;
+  if (state.selKec) $('selChip').innerHTML = `Kecamatan ${esc(state.selKec)} <button title="Batalkan" id="chipX">&times;</button>`;
+  if (state.selKec) $('chipX').onclick = () => { state.selKec = null; renderAll(); };
+
+  renderKpis(ds, all, recs, recsSel, byKec, cmpSel);
+  const rp = ds.meta.rep;
+  $('srcNote').textContent = rp ? `Sumber: ${ds.meta.file}. ${fmtN(rp.kept)} kasus dari ${fmtN(rp.raw)} baris. Dikecualikan: ${fmtN(rp.dup)} duplikat, ${fmtN(rp.luar)} luar kabupaten, ${fmtN(rp.unmapped)} kecamatan tidak dikenali/kosong, ${fmtN(rp.badDate)} tanggal tidak terbaca.` : '';
+
+  const yc = countBy(all, r => r.t.slice(0,4));
+  $('srcNote').textContent += ' Kasus per tahun: ' + Object.keys(yc).sort().map(y => `${y} (${fmtN(yc[y])})`).join(', ') + '.' +
+    (ds.meta.monthOnly ? ' Waktu kasus hanya per bulan, jadi tren per minggu dinonaktifkan.' : '');
+  ensureMap();
+  updateMap(names, byKec);
+  renderRank(names, byKec, cmpByKec);
+  renderTrend(recsSel, cmpSel);
+  renderAgeSex(recsSel);
+  renderCats(ds, ad, recsSel);
+  renderTable(names, byKec, recs, cmpByKec);
+  $('mapTitle').textContent = `Peta sebaran ${state.current} - ${state.metric === 'count' ? 'jumlah kasus' : 'insidens per 100.000'} (${periodText()})`;
+}
+
+function renderKpis(ds, all, recs, recsSel, byKec, cmpSel){
+  const cards = [];
+  const cur = recsSel.length;
+  cards.push(`<div class="kpi"><div class="l">Total kasus${state.selKec ? ' - ' + esc(state.selKec) : ''}</div><div class="v">${fmtN(cur)}</div><div class="s">${esc(periodText())}</div></div>`);
+
+  // perbandingan dengan periode sebelumnya (panjang sama), hanya jika satu tahun dipilih
+  let cmp = '<div class="v">-</div><div class="s">Pilih satu tahun untuk membandingkan</div>';
+  let cmpLabel = 'Dibanding periode sebelumnya';
+  if (cmpSel){
+    const prev = cmpSel.length; cmpLabel = 'Dibanding tahun ' + state.cmp;
+    if (prev === 0) cmp = `<div class="v">-</div><div class="s">Tahun ${esc(state.cmp)}: 0 kasus pada periode yang sama</div>`;
+    else {
+      const pct = (cur - prev) / prev * 100;
+      cmp = `<div class="v ${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '▲' : pct < 0 ? '▼' : ''} ${fmtD(Math.abs(pct),1)}%</div><div class="s">${fmtN(prev)} kasus pada periode yang sama tahun ${esc(state.cmp)}</div>`;
+    }
+  } else if (state.year !== 'all'){
+    const n = state.m2 - state.m1 + 1;
+    const s = (+state.year) * 12 + (state.m1 - 1);
+    const pool = state.selKec ? all.filter(r => r.k === state.selKec) : all;
+    const prev = pool.filter(r => { const m = mIdx(r.t); return m >= s - n && m <= s - 1; }).length;
+    const minIdx = Math.min(...all.map(r => mIdx(r.t)));
+    if (s - n < minIdx) cmp = '<div class="v">-</div><div class="s">Data periode sebelumnya belum ada</div>';
+    else if (prev === 0) cmp = `<div class="v">-</div><div class="s">Periode sebelumnya 0 kasus</div>`;
+    else {
+      const pct = (cur - prev) / prev * 100;
+      cmp = `<div class="v ${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '▲' : pct < 0 ? '▼' : ''} ${fmtD(Math.abs(pct),1)}%</div><div class="s">${fmtN(prev)} kasus pada ${n} bulan sebelumnya</div>`;
+    }
+  }
+  cards.push(`<div class="kpi"><div class="l">${cmpLabel}</div>${cmp}</div>`);
+
+  const ranked = Object.entries(byKec).map(([k,c]) => [k, metricValue(k,c), c]).filter(x => x[1] != null).sort((a,b) => b[1]-a[1]);
+  cards.push(`<div class="kpi"><div class="l">Kecamatan tertinggi</div><div class="v" style="font-size:22px">${ranked.length ? esc(ranked[0][0]) : '-'}</div>
+    <div class="s">${ranked.length ? (state.metric === 'count' ? fmtN(ranked[0][2]) + ' kasus' : fmtD(ranked[0][1],1) + ' per 100.000') : ''}</div></div>`);
+
+  let dead = 0, hasEnd = false;
+  hasEnd = ds.records.some(r => Object.keys(r.c).some(k => /meninggal/i.test(r.c[k])));
+  recsSel.forEach(r => { if (Object.keys(r.c).some(k => /meninggal/i.test(r.c[k]))) dead++; });
+  if (hasEnd){
+    cards.push(`<div class="kpi"><div class="l">Meninggal</div><div class="v">${fmtN(dead)}</div><div class="s">${cur ? fmtD(dead/cur*100,1) + '% dari total kasus' : ''}</div></div>`);
+  } else {
+    const ages = recsSel.map(r => r.u).filter(u => u != null).sort((a,b) => a-b);
+    if (ages.length) cards.push(`<div class="kpi"><div class="l">Median umur</div><div class="v">${ages[Math.floor(ages.length/2)]} th</div><div class="s">${ages.length} kasus dengan umur</div></div>`);
+  }
+  $('kpis').innerHTML = cards.join('');
+}
+
+/* ---------- peta ---------- */
+function ensureMap(){
+  if (!GEO){ $('map').innerHTML = '<p class="note" style="padding:20px">Peta belum termuat (lihat peringatan di atas).</p>'; return; }
+  if (map){ setTimeout(() => map.invalidateSize(), 30); return; }
+  map = L.map('map', {zoomSnap:0.25});
+  geoLayer = L.geoJSON(GEO, {
+    style: styleFor,
+    onEachFeature: (f, layer) => {
+      layer.on('click', () => toggleSel(f.properties[GEO_NAME_PROP]));
+      layer.on('mouseover', () => layer.setStyle({weight:2.5, color:'#222'}));
+      layer.on('mouseout', () => layer.setStyle(styleFor(f)));
+    }
+  }).addTo(map);
+  map.fitBounds(geoLayer.getBounds());
+  legendDiv = null;
+  const lg = L.control({position:'bottomright'});
+  lg.onAdd = () => { legendDiv = L.DomUtil.create('div','legend'); return legendDiv; };
+  lg.addTo(map);
+}
+let mapVals = {}, mapBreaks = [];
+function makeBreaks(max){
+  if (!(max > 0)) return [];
+  const bins = (state.metric === 'count' && max < 5) ? max : 5;
+  const out = [];
+  for (let i=1;i<=bins;i++){
+    const v = max * i / bins;
+    out.push(state.metric === 'count' ? Math.ceil(v) : Math.round(v*10)/10);
+  }
+  return out.filter((v,i) => i === 0 || v > out[i-1]);
+}
+function colorIdx(i, n){ return n === 1 ? 3 : Math.round(i * 4 / (n - 1)); }
+function colorFor(v){
+  if (v == null) return '#d9d9d9';
+  if (v <= 0) return '#eef2f3';
+  let i = mapBreaks.findIndex(b => v <= b); if (i < 0) i = mapBreaks.length - 1;
+  return RAMP[colorIdx(i, mapBreaks.length)];
+}
+function styleFor(f){
+  const n = f.properties[GEO_NAME_PROP], sel = n === state.selKec;
+  return {weight: sel ? 3 : 1, color: sel ? '#0b2e2b' : '#ffffff', fillColor: colorFor(mapVals[n]), fillOpacity: 0.88};
+}
+function valText(n){
+  const v = mapVals[n];
+  if (v == null) return state.metric === 'inc' ? 'tanpa data penduduk' : '-';
+  return state.metric === 'count' ? fmtN(v) : fmtD(v,1);
+}
+function updateMap(names, byKec){
+  mapVals = {};
+  names.forEach(n => { mapVals[n] = metricValue(n, byKec[n] || 0); });
+  const mx = Math.max(0, ...Object.values(mapVals).filter(v => v != null));
+  mapBreaks = makeBreaks(mx);
+  if (!geoLayer) return;
+  geoLayer.setStyle(styleFor);
+  geoLayer.eachLayer(l => {
+    const n = l.feature.properties[GEO_NAME_PROP];
+    l.unbindTooltip();
+    const cnt = byKec[n] || 0, p = state.pop[n];
+    if (state.showLabels){
+      l.bindTooltip(`${esc(n)}<br><b>${valText(n)}</b>`, {permanent:true, direction:'center', className:'kec-label'});
+    } else {
+      l.bindTooltip(`<b>${esc(n)}</b><br>Kasus: ${fmtN(cnt)}` + (p > 0 ? `<br>Insidens: ${fmtD(cnt/p*1e5,1)} per 100.000` : ''), {sticky:true});
+    }
+    if (n === state.selKec) l.bringToFront();
+  });
+  if (legendDiv){
+    let h = `<b>${state.metric === 'count' ? 'Jumlah kasus' : 'Per 100.000'}</b><br>`;
+    if (!mapBreaks.length) h += 'Tidak ada kasus';
+    else {
+      h += `<i style="background:#eef2f3"></i>0<br>`;
+      mapBreaks.forEach((b,i) => {
+        const lo = i ? mapBreaks[i-1] : 0;
+        const t = state.metric === 'count' ? (lo + 1 === b ? `${b}` : `${lo+1} - ${b}`) : `${fmtD(lo,1)} - ${fmtD(b,1)}`;
+        h += `<i style="background:${RAMP[colorIdx(i, mapBreaks.length)]}"></i>${t}<br>`;
+      });
+      if (state.metric === 'inc') h += '<i style="background:#d9d9d9"></i>tanpa data penduduk';
+    }
+    legendDiv.innerHTML = h;
+  }
+}
+function toggleSel(name){ state.selKec = (state.selKec === name) ? null : name; renderAll(); }
+
+/* ---------- grafik ---------- */
+function mk(id, cfg){
+  if (charts[id]) charts[id].destroy();
+  const el = $(id); if (!el) return;
+  charts[id] = new Chart(el.getContext('2d'), cfg);
+}
+const baseOpt = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}};
+
+function renderRank(names, byKec, cmpByKec){
+  const rows = names.map(n => [n, metricValue(n, byKec[n] || 0), cmpByKec ? metricValue(n, cmpByKec[n] || 0) : null])
+    .filter(x => x[1] != null).sort((a,b) => b[1] - a[1]);
+  const r1 = v => (state.metric === 'count' || v == null) ? v : Math.round(v * 10) / 10;
+  const sets = [{label: String(state.year), data: rows.map(r => r1(r[1])), backgroundColor: rows.map(r => r[0] === state.selKec ? '#0b5a54' : '#7cc4bd')}];
+  if (cmpByKec) sets.push({label: String(state.cmp), data: rows.map(r => r1(r[2])), backgroundColor: '#cbd5e1'});
+  mk('chRank', {type:'bar', data:{labels: rows.map(r => r[0]), datasets: sets},
+    options:{...baseOpt, plugins:{legend:{display: !!cmpByKec}}, indexAxis:'y', scales:{x:{beginAtZero:true}},
+      onClick:(e, els) => { if (els.length) toggleSel(rows[els[0].index][0]); }}});
+}
+function trendSeries(recs){
+  const gran = state.gran;
+  if (!recs.length) return {labels:[], values:[]};
+  const ts = recs.map(r => r.t).sort();
+  const cnt = {}; const keys = []; let labels = [];
+  if (gran === 'month'){
+    recs.forEach(r => { const k = r.t.slice(0,7); cnt[k] = (cnt[k]||0) + 1; });
+    let s, e;
+    if (state.year !== 'all'){ s = [+state.year, state.m1]; e = [+state.year, state.m2]; }
+    else { s = ts[0].slice(0,7).split('-').map(Number); e = ts[ts.length-1].slice(0,7).split('-').map(Number); }
+    let y = s[0], m = s[1];
+    while (y < e[0] || (y === e[0] && m <= e[1])){ keys.push(y + '-' + pad2(m)); m++; if (m > 12){ m = 1; y++; } }
+    labels = keys.map(k => { const p = k.split('-'); return MONTH_LABEL[+p[1]-1] + ' ' + p[0]; });
+  } else {
+    recs.forEach(r => { const k = isoWeekKey(r.t); cnt[k] = (cnt[k]||0) + 1; });
+    const a = ts[0].split('-').map(Number), b = ts[ts.length-1].split('-').map(Number);
+    const d0 = Date.UTC(a[0],a[1]-1,a[2]), d1 = Date.UTC(b[0],b[1]-1,b[2]);
+    const wkOf = d => { const dt = new Date(d); return isoWeekKey(dt.getUTCFullYear() + '-' + pad2(dt.getUTCMonth()+1) + '-' + pad2(dt.getUTCDate())); };
+    for (let d = d0; d <= d1; d += 7*864e5){ const k = wkOf(d); if (keys.indexOf(k) < 0) keys.push(k); }
+    const kl = wkOf(d1); if (keys.indexOf(kl) < 0) keys.push(kl);
+    const years = new Set(keys.map(k => k.slice(0,4)));
+    labels = keys.map(k => years.size > 1 ? `${+k.slice(6)}/${k.slice(2,4)}` : 'Mgg ' + (+k.slice(6)));
+  }
+  return {labels, values: keys.map(k => cnt[k] || 0)};
+}
+function renderTrend(recs, cmpSel){
+  if (cmpSel){
+    const idx = []; for (let m = state.m1; m <= state.m2; m++) idx.push(m);
+    const cnt = arr => { const o = {}; arr.forEach(r => { const m = +r.t.slice(5,7); o[m] = (o[m] || 0) + 1; }); return idx.map(m => o[m] || 0); };
+    $('trendTitle').textContent = `Tren kasus per bulan: ${state.year} dibanding ${state.cmp}${state.selKec ? ' - ' + state.selKec : ''}`;
+    mk('chTrend', {type:'line', data:{labels: idx.map(m => MONTH_LABEL[m-1]), datasets:[
+        {label: String(state.year), data: cnt(recs), borderColor:'#0f766e', backgroundColor:'rgba(15,118,110,.12)', fill:true, tension:.25, pointRadius:3},
+        {label: String(state.cmp), data: cnt(cmpSel), borderColor:'#94a3b8', borderDash:[6,4], tension:.25, pointRadius:3}]},
+      options:{...baseOpt, plugins:{legend:{display:true}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}});
+    return;
+  }
+  const t = trendSeries(recs);
+  $('trendTitle').textContent = `Tren kasus per ${state.gran === 'month' ? 'bulan' : 'minggu'}${state.selKec ? ' - ' + state.selKec : ''}`;
+  mk('chTrend', {type:'line', data:{labels:t.labels, datasets:[{data:t.values, borderColor:'#0f766e', backgroundColor:'rgba(15,118,110,.15)', fill:true, tension:.25, pointRadius: t.values.length > 30 ? 0 : 3}]},
+    options:{...baseOpt, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}});
+}
+function renderAgeSex(recs){
+  const ag = {}; AGE_GROUPS.forEach(g => ag[g[0]] = 0);
+  let noAge = 0;
+  recs.forEach(r => { if (r.u == null) noAge++; else { const g = ageGroup(r.u); if (g) ag[g]++; } });
+  mk('chAge', {type:'bar', data:{labels:Object.keys(ag), datasets:[{data:Object.values(ag), backgroundColor:'#0f766e'}]},
+    options:{...baseOpt, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}});
+  const sx = {L:0, P:0, N:0};
+  recs.forEach(r => { sx[r.s || 'N']++; });
+  mk('chSex', {type:'doughnut', data:{labels:['Laki-laki','Perempuan','Tidak diisi'], datasets:[{data:[sx.L, sx.P, sx.N], backgroundColor:['#2563eb','#db2777','#cbd5e1']}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}});
+}
+function renderCats(ds, ad, recs){
+  const fields = ad.fields.filter(f => f.kind === 'cat' && ds.records.some(r => r.c[f.key] != null));
+  const wrap = $('cats');
+  Object.keys(charts).filter(k => k.indexOf('chCat_') === 0).forEach(k => { charts[k].destroy(); delete charts[k]; });
+  wrap.innerHTML = fields.map(f => `<div class="card"><h3>${esc((ds.meta.catLabels && ds.meta.catLabels[f.key]) || f.label)}${f.sensitive ? ' <small>(kategori &lt; ' + MIN_CELL + ' digabung)</small>' : ''}</h3><div class="cwrap" style="height:260px"><canvas id="chCat_${f.key}"></canvas></div></div>`).join('');
+  fields.forEach(f => {
+    const o = countBy(recs, r => r.c[f.key]);
+    let e = Object.entries(o).sort((a,b) => b[1]-a[1]);
+    if (f.sensitive){
+      const small = e.filter(x => x[1] < MIN_CELL), big = e.filter(x => x[1] >= MIN_CELL);
+      const sum = small.reduce((a,x) => a + x[1], 0);
+      e = big.concat(sum ? [['Lainnya (< ' + MIN_CELL + ' kasus)', sum]] : []);
+    } else if (e.length > 8){
+      const rest = e.slice(8).reduce((a,x) => a + x[1], 0);
+      e = e.slice(0,8).concat([['Lainnya', rest]]);
+    }
+    mk('chCat_' + f.key, {type:'bar', data:{labels:e.map(x => x[0]), datasets:[{data:e.map(x => x[1]), backgroundColor:'#7cc4bd'}]},
+      options:{...baseOpt, indexAxis:'y', scales:{x:{beginAtZero:true, ticks:{precision:0}}}}});
+  });
+}
+function tableRows(names, byKec, recs, cmpByKec){
+  const total = recs.length;
+  return names.map(n => {
+    const c = byKec[n] || 0, p = state.pop[n], cv = cmpByKec ? (cmpByKec[n] || 0) : null;
+    return {kec:n, c, pct: total ? c/total*100 : 0, inc: p > 0 ? c/p*1e5 : null, pop: p || null, cmp: cv, chg: (cv > 0) ? (c - cv) / cv * 100 : null};
+  }).sort((a,b) => b.c - a.c);
+}
+function renderTable(names, byKec, recs, cmpByKec){
+  const rows = tableRows(names, byKec, recs, cmpByKec);
+  const cm = !!cmpByKec;
+  $('tbl').innerHTML = `<tr><th>Kecamatan</th><th class="n">Kasus ${esc(state.year)}</th>${cm ? `<th class="n">Kasus ${esc(state.cmp)}</th><th class="n">Perubahan</th>` : ''}<th class="n">% dari total</th><th class="n">Penduduk</th><th class="n">Insidens / 100.000</th></tr>` +
+    rows.map(r => `<tr class="${r.kec === state.selKec ? 'sel' : ''}"><td>${esc(r.kec)}</td><td class="n">${fmtN(r.c)}</td>${cm ? `<td class="n">${fmtN(r.cmp)}</td><td class="n">${r.chg == null ? '-' : (r.chg > 0 ? '+' : '') + fmtD(r.chg,1) + '%'}</td>` : ''}<td class="n">${fmtD(r.pct,1)}%</td><td class="n">${fmtN(r.pop)}</td><td class="n">${r.inc == null ? '-' : fmtD(r.inc,1)}</td></tr>`).join('') +
+    `<tr><th>Total</th><th class="n">${fmtN(recs.length)}</th>${cm ? `<th class="n">${fmtN(Object.values(cmpByKec).reduce((a,b) => a + b, 0))}</th><th></th>` : ''}<th></th><th></th><th></th></tr>`;
+}
+function exportRekap(){
+  const ds = curDs(); if (!ds) return;
+  const recs = ds.records.filter(inPeriod);
+  const names = KEC_NAMES.length ? KEC_NAMES : [...new Set(recs.map(r => r.k))].sort();
+  const cmpOn = state.year !== 'all' && state.cmp !== 'none';
+  const cmpBy = cmpOn ? countBy(ds.records.filter(r => r.t.slice(0,4) === state.cmp && inMonths(r)), r => r.k) : null;
+  const rows = tableRows(names, countBy(recs, r => r.k), recs, cmpBy);
+  const head = ['Kecamatan', 'Kasus ' + state.year].concat(cmpBy ? ['Kasus ' + state.cmp, 'Perubahan (%)'] : []).concat(['Persen dari total','Penduduk','Insidens per 100.000']);
+  const body = rows.map(r => [r.kec, r.c].concat(cmpBy ? [r.cmp, r.chg == null ? null : Math.round(r.chg*10)/10] : []).concat([Math.round(r.pct*10)/10, r.pop, r.inc == null ? null : Math.round(r.inc*10)/10]));
+  const aoa = [['Penyakit', state.current], ['Periode', periodText()], [], head].concat(body).concat([['Total', recs.length]]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Rekap');
+  XLSX.writeFile(wb, `rekap-${state.current}-${state.year}.xlsx`);
+}
+
+/* =====================================================================
+   PETA (GeoJSON) + EVENT
+   ===================================================================== */
+function onGeoLoaded(g){
+  const names = g.features.map(f => f.properties[GEO_NAME_PROP]).filter(Boolean);
+  if (!names.length){ $('geoWarn').hidden = false; return; }
+  GEO = g; setKecNames(names);
+  $('geoWarn').hidden = true;
+  state.pop = state.pop || {};
+  renderAll();
+}
+function init(){
+  loadStore();
+  $('btnUpload').onclick = $('btnUpload2').onclick = () => { $('fileData').value = ''; $('fileData').click(); };
+  $('fileData').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!KEC_NAMES.length) { alert('Peta batas kecamatan belum termuat, jadi nama kecamatan belum bisa dicocokkan. Lihat peringatan di bagian atas.'); return; }
+    const fr = new FileReader(); fr.onload = () => loadFileBuffer(fr.result, f.name); fr.readAsArrayBuffer(f);
+  };
+  $('btnPop').onclick = openPop;
+  $('btnSave').onclick = saveProject;
+  $('btnOpen').onclick = () => { $('fileProject').value = ''; $('fileProject').click(); };
+  $('fileProject').onchange = e => { if (e.target.files[0]) openProject(e.target.files[0]); };
+  $('btnClear').onclick = () => {
+    if (!confirm('Hapus semua data yang tersimpan di browser ini?')) return;
+    state.data = {}; localStorage.removeItem(STORE_KEY); state.selKec = null; state.current = 'RINGKASAN'; renderAll();
+  };
+  $('btnGeo').onclick = () => $('fileGeo').click();
+  $('fileGeo').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const fr = new FileReader(); fr.onload = () => { try { onGeoLoaded(JSON.parse(fr.result)); } catch(err){ alert('GeoJSON tidak valid'); } }; fr.readAsText(f);
+  };
+  $('modalBack').addEventListener('mousedown', e => { if (e.target === $('modalBack') && !state.imp) closeModal(); });
+  $('fYear').onchange = e => { state.year = e.target.value; state.selKec = null; autoCmp(); refreshYearOptions(); renderAll(); };
+  $('fCmp').onchange = e => { state.cmp = e.target.value; renderAll(); };
+  $('fM1').onchange = e => { state.m1 = +e.target.value; if (state.m2 < state.m1){ state.m2 = state.m1; $('fM2').value = state.m2; } renderAll(); };
+  $('fM2').onchange = e => { state.m2 = +e.target.value; if (state.m1 > state.m2){ state.m1 = state.m2; $('fM1').value = state.m1; } renderAll(); };
+  $('fMetric').onchange = e => { state.metric = e.target.value; renderAll(); };
+  $('fGran').onchange = e => { state.gran = e.target.value; renderAll(); };
+  $('fLabels').onchange = e => { state.showLabels = e.target.checked; renderAll(); };
+  $('fBase').onchange = e => {
+    state.showBase = e.target.checked;
+    if (!map) return;
+    if (state.showBase){
+      baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18, attribution:'&copy; OpenStreetMap'}).addTo(map);
+      baseLayer.bringToBack();
+    } else if (baseLayer){ map.removeLayer(baseLayer); baseLayer = null; }
+  };
+  $('btnXlsx').onclick = exportRekap;
+  if (Object.keys(state.data).length) state.current = 'RINGKASAN';
+  refreshYearOptions();
+  renderAll();
+  fetch(GEOJSON_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(onGeoLoaded).catch(() => { $('geoWarn').hidden = false; });
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
